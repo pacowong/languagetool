@@ -33,7 +33,7 @@ public class ContextTools {
 
   public String getContext(final int fromPos, final int toPos, final String contents) {
     final String text = contents.replace('\n', ' ');
-    // calculate context region:
+    // calculate context region, i.e. extend the both ends by contextSize:
     int startContent = fromPos - contextSize;
     String prefix = "...";
     String postfix = "...";
@@ -55,7 +55,7 @@ public class ContextTools {
     sb.append(prefix);
     sb.append(text.substring(startContent, endContent));
     final String markerStr = markerPrefix
-        + marker.substring(startContent, endContent);
+        + marker.substring(startContent, endContent); // prefix+text length
     sb.append(postfix);
     final int startMark = markerStr.indexOf('^');
     final int endMark = markerStr.lastIndexOf('^');
@@ -80,26 +80,43 @@ public class ContextTools {
    * given string region. Ignores {@link #setEscapeHtml(boolean)}.
    * @since 2.3
    */
-  public String getPlainTextContext(final int fromPos, final int toPos, final String contents) {
-    final String text = contents.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ');
-    // calculate context region:
-    int startContent = fromPos - contextSize;
-    String prefix = "...";
-    String postfix = "...";
-    String markerPrefix = "   ";
-    if (startContent < 0) {
-      prefix = "";
-      markerPrefix = "";
-      startContent = 0;
-    }
-    int endContent = toPos + contextSize;
-    if (endContent > text.length()) {
-      postfix = "";
-      endContent = text.length();
-    }
-    final StringBuilder marker = getMarker(fromPos, toPos, text.length() + prefix.length());
+  public String getPlainTextContext(int fromPos, int toPos, final String contents) {
+    // mark the string from fromPos to toPos-1 and save it in a marker string
+	  final String text = contents.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ');
+	  final int textLength = text.length();
+	  
+	  // check the input range
+	  fromPos = Math.max(0,fromPos);
+	  toPos = Math.min(toPos,textLength);
+	  
+	  // construct the marked string
+	  StringBuilder sbTruncated = new StringBuilder(), sbMarkers = new StringBuilder();
+	  
+	  // starting part
+	  int startContent = Math.max(0,fromPos-contextSize);
+	  if (startContent > 0){
+		  sbTruncated.append("..."); // Prefix
+		  sbMarkers.append("   ");
+	  }
+
+	  // middle part with markers
+	  sbMarkers.append(repeatChar(' ', fromPos-startContent));
+	  sbMarkers.append(repeatChar('^', toPos-fromPos));
+	  
+	  int endContent = Math.min(toPos+contextSize,textLength);
+	  sbTruncated.append(text.substring(startContent, endContent));
+	  
+	  // ending part
+	  if (endContent < contents.length()-1){
+		  sbTruncated.append("..."); // Suffix
+	  }
+	  
+	  if (endContent > toPos){
+		sbMarkers.append(repeatChar(' ', endContent-toPos));
+	  }
+
     // now build context string plus marker:
-    return prefix + text.substring(startContent, endContent) + postfix + '\n' + markerPrefix + marker.substring(startContent, endContent);
+    return sbTruncated.toString() + '\n' + sbMarkers.toString();
   }
 
   /**
@@ -133,7 +150,7 @@ public class ContextTools {
 
   private StringBuilder getMarker(int fromPos, int toPos, int textLength) {
     // make "^" marker. inefficient but robust implementation:
-    final StringBuilder marker = new StringBuilder();
+    final StringBuilder marker = new StringBuilder(textLength);
     for (int i = 0; i < textLength; i++) {
       if (i >= fromPos && i < toPos) {
         marker.append('^');
@@ -142,5 +159,11 @@ public class ContextTools {
       }
     }
     return marker;
+  }
+  
+  private String repeatChar(char c, int n){
+    char[] repeat = new char[number];
+    Arrays.fill(repeat, c);
+    return new String(repeat);
   }
 }
