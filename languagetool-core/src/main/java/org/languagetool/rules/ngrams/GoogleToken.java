@@ -72,11 +72,11 @@ class GoogleToken {
   // Tokenization in google ngram corpus is different from LT tokenization (e.g. {@code you ' re} -> {@code you 're}),
   // so we use getTokenizer() and simple ignore the LT tokens.
   static List<GoogleToken> getGoogleTokens(String sentence, boolean addStartToken, Tokenizer wordTokenizer) {
-    List<GoogleToken> result = new ArrayList<>();
+    List<String> tokens = wordTokenizer.tokenize(sentence);
+    List<GoogleToken> result = new ArrayList<>(tokens.size());
     if (addStartToken) {
       result.add(new GoogleToken(LanguageModel.GOOGLE_SENTENCE_START, 0, 0));
     }
-    List<String> tokens = wordTokenizer.tokenize(sentence);
     int startPos = 0;
     for (String token : tokens) {
       if (!StringTools.isWhitespace(token)) {
