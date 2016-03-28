@@ -18,6 +18,8 @@
  */
 package org.languagetool.tools;
 
+import java.util.Arrays;
+
 /**
  * Helper class to mark errors in text.
  */
@@ -162,7 +164,7 @@ public class ContextTools {
   }
   
   private String repeatChar(char c, int n){
-    char[] repeat = new char[number];
+    char[] repeat = new char[n];
     Arrays.fill(repeat, c);
     return new String(repeat);
   }
